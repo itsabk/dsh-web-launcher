@@ -3,3 +3,4 @@ work-icon-current/
 work-icon-new/
 *.zip
 logs/
+*.log
