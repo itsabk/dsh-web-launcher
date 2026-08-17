@@ -1,0 +1,55 @@
+#!/bin/zsh
+set -euo pipefail
+
+URL="http://127.0.0.1:3080"
+LABEL="com.local.deepseek-harness-web"
+BASE_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+INSTALLER="$BASE_DIR/scripts/install-service.command"
+LOG_FILE="$HOME/Library/Application Support/DeepSeek Harness Web/logs/dsh-web.log"
+
+is_ready() {
+  /usr/bin/curl -fsS "$URL" >/dev/null 2>&1
+}
+
+notify() {
+  /usr/bin/osascript -e "display notification \"$1\" with title \"DeepSeek Harness Web\"" >/dev/null 2>&1 || true
+}
+
+open_url() {
+  if /usr/bin/osascript -e 'id of application "Google Chrome"' >/dev/null 2>&1; then
+    /usr/bin/open -a "Google Chrome" "$URL"
+  else
+    /usr/bin/open "$URL"
+  fi
+}
+
+if is_ready; then
+  open_url
+  exit 0
+fi
+
+if ! launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1; then
+  if [[ -x "$INSTALLER" ]]; then
+    "$INSTALLER" >/dev/null 2>&1 || true
+  fi
+else
+  launchctl kickstart -k "gui/$(id -u)/$LABEL" >/dev/null 2>&1 || true
+fi
+
+notify "Starting DeepSeek Harness Web. First launch can take several minutes."
+
+for _ in {1..240}; do
+  if is_ready; then
+    open_url
+    notify "DeepSeek Harness Web is ready."
+    exit 0
+  fi
+  /bin/sleep 1
+done
+
+open_url
+if [[ -f "$LOG_FILE" ]]; then
+  /usr/bin/open -R "$LOG_FILE" >/dev/null 2>&1 || true
+fi
+notify "Still starting or failed. Check the log file."
+exit 0
