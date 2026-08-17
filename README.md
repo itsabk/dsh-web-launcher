@@ -47,6 +47,15 @@ DeepSeek Harness launcher, DSH launcher, dsh web launcher, DeepSeek Harness desk
 
 ## Install
 
+## Downloads
+
+Use the platform-specific release package:
+
+- macOS: `dsh-web-launcher-macos-v0.2.0.zip`
+- Windows: `dsh-web-launcher-windows-v0.2.0.zip`
+
+The source repository contains both platforms, but release downloads are split by operating system for convenience.
+
 ### macOS
 
 1. Download or clone this repository.
