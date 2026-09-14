@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build platform archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          mac_name="dsh-web-launcher-macos-v${version}"
+          win_name="dsh-web-launcher-windows-v${version}"
+
+          mkdir -p "dist/$mac_name/scripts" "dist/$win_name/windows"
+          cp -a "DeepSeek Harness.app" "dist/$mac_name/"
+          cp scripts/*.command scripts/*.zsh "dist/$mac_name/scripts/"
+          cp README.md LICENSE "dist/$mac_name/"
+          cp windows/* "dist/$win_name/windows/"
+          cp README.md LICENSE "dist/$win_name/"
+
+          (cd dist && zip -qr "$mac_name.zip" "$mac_name")
+          (cd dist && zip -qr "$win_name.zip" "$win_name")
+          (cd dist && sha256sum *.zip > SHA256SUMS)
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS --generate-notes
