@@ -1,16 +1,39 @@
 #!/bin/zsh
 set -euo pipefail
 
-BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_SUPPORT="$HOME/Library/Application Support/DeepSeek Harness Web"
 LAUNCH_AGENTS="$HOME/Library/LaunchAgents"
 PLIST="$LAUNCH_AGENTS/com.local.deepseek-harness-web.plist"
 SERVICE_SCRIPT="$APP_SUPPORT/dsh-web-service.zsh"
+INSTALLER_COPY="$APP_SUPPORT/install-service.command"
 LOG_DIR="$APP_SUPPORT/logs"
+APP_SOURCE="$BASE_DIR/DeepSeek Harness.app"
 
-mkdir -p "$APP_SUPPORT" "$LAUNCH_AGENTS" "$LOG_DIR"
-cp "$BASE_DIR/scripts/dsh-web-service.zsh" "$SERVICE_SCRIPT"
-chmod +x "$SERVICE_SCRIPT"
+if [[ -d "/Applications" && -w "/Applications" ]]; then
+  APP_DIR="/Applications"
+else
+  APP_DIR="$HOME/Applications"
+fi
+APP_DEST="$APP_DIR/DeepSeek Harness.app"
+
+umask 077
+mkdir -p "$APP_SUPPORT" "$APP_DIR" "$LAUNCH_AGENTS" "$LOG_DIR"
+chmod 700 "$APP_SUPPORT" "$LOG_DIR"
+if [[ "$SCRIPT_DIR/dsh-web-service.zsh" != "$SERVICE_SCRIPT" ]]; then
+  cp "$SCRIPT_DIR/dsh-web-service.zsh" "$SERVICE_SCRIPT"
+fi
+if [[ "$0" != "$INSTALLER_COPY" ]]; then
+  cp "$0" "$INSTALLER_COPY"
+fi
+chmod +x "$SERVICE_SCRIPT" "$INSTALLER_COPY"
+
+if [[ -d "$APP_SOURCE" ]]; then
+  /usr/bin/ditto "$APP_SOURCE" "$APP_DEST"
+  chmod +x "$APP_DEST/Contents/MacOS/DeepSeekHarnessWeb"
+  /usr/bin/codesign --force --deep --sign - "$APP_DEST" >/dev/null 2>&1 || true
+fi
 
 cat >"$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -49,5 +72,5 @@ launchctl bootstrap "gui/$(id -u)" "$PLIST"
 launchctl kickstart -k "gui/$(id -u)/com.local.deepseek-harness-web"
 
 echo "DeepSeek Harness Web service installed and started."
-echo "Open http://127.0.0.1:3080 after the first download/startup finishes."
+echo "Launcher: $APP_DEST"
 echo "Logs: $LOG_DIR/dsh-web.log"

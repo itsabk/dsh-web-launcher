@@ -9,9 +9,20 @@ $Runner = Join-Path $PSScriptRoot "run-dsh-web-service.ps1"
 
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
+function Get-DshWebUrl {
+  if (Test-Path $LogFile) {
+    $Match = Select-String -Path $LogFile -Pattern 'dsh web: (http://127[.]0[.]0[.]1:3080/[?]token=[^ ]+)' |
+      Select-Object -Last 1
+    if ($Match -and $Match.Matches.Count -gt 0) {
+      return $Match.Matches[0].Groups[1].Value.Trim()
+    }
+  }
+  return $Url
+}
+
 function Test-DshWebReady {
   try {
-    Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2 | Out-Null
+    Invoke-WebRequest -Uri (Get-DshWebUrl) -UseBasicParsing -TimeoutSec 2 | Out-Null
     return $true
   }
   catch {
@@ -20,7 +31,7 @@ function Test-DshWebReady {
 }
 
 function Open-DshWeb {
-  Start-Process $Url | Out-Null
+  Start-Process (Get-DshWebUrl) | Out-Null
 }
 
 if (Test-DshWebReady) {

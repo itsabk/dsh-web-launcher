@@ -18,14 +18,14 @@ Write-Log "PATH=$env:PATH"
 $Dsh = Get-Command dsh -ErrorAction SilentlyContinue
 if ($Dsh) {
   Write-Log "Using dsh: $($Dsh.Source)"
-  & $Dsh.Source web *>> $LogFile
+  & $Dsh.Source web --no-open *>> $LogFile
   exit $LASTEXITCODE
 }
 
 $Npx = Get-Command npx -ErrorAction SilentlyContinue
 if ($Npx) {
   Write-Log "Using npx: $($Npx.Source)"
-  & $Npx.Source --yes "@deepseek-ai/dsh" web *>> $LogFile
+  & $Npx.Source --yes "@deepseek-ai/dsh@latest" web --no-open *>> $LogFile
   exit $LASTEXITCODE
 }
 

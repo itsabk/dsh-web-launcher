@@ -6,8 +6,15 @@ LOG_DIR="$APP_SUPPORT/logs"
 LOG_FILE="$LOG_DIR/dsh-web.log"
 STATE_FILE="$APP_SUPPORT/service-state"
 
+umask 077
 mkdir -p "$LOG_DIR"
+touch "$LOG_FILE" "$STATE_FILE"
+chmod 600 "$LOG_FILE" "$STATE_FILE"
 cd "$HOME"
+
+# launchd starts with a minimal PATH. Include common user and Homebrew locations
+# so the globally installed dsh binary is found without relying on a login shell.
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 echo "---- $(date '+%Y-%m-%d %H:%M:%S') starting DeepSeek Harness Web ----" >>"$LOG_FILE"
 
@@ -27,13 +34,13 @@ fi
   if command -v dsh >/dev/null 2>&1; then
     echo "Using dsh: $(command -v dsh)"
     echo "running" >"$STATE_FILE"
-    exec dsh web
+    exec dsh web --no-open
   fi
 
   if command -v npx >/dev/null 2>&1; then
     echo "Using npx: $(command -v npx)"
     echo "running" >"$STATE_FILE"
-    exec npx --yes @deepseek-ai/dsh web
+    exec npx --yes @deepseek-ai/dsh@latest web --no-open
   fi
 
   echo "ERROR: neither dsh nor npx was found. Install Node.js or make npx available through nvm."

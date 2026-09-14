@@ -3,12 +3,21 @@ set -euo pipefail
 
 URL="http://127.0.0.1:3080"
 LABEL="com.local.deepseek-harness-web"
-BASE_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
-INSTALLER="$BASE_DIR/scripts/install-service.command"
+INSTALLER="$HOME/Library/Application Support/DeepSeek Harness Web/install-service.command"
 LOG_FILE="$HOME/Library/Application Support/DeepSeek Harness Web/logs/dsh-web.log"
 
+launch_url() {
+  local token_url=""
+  if [[ -f "$LOG_FILE" ]]; then
+    token_url="$(/usr/bin/awk '/dsh web: http:\/\/127\.0\.0\.1:3080\/\?token=/{url=$NF} END{print url}' "$LOG_FILE")"
+  fi
+  printf '%s\n' "${token_url:-$URL}"
+}
+
 is_ready() {
-  /usr/bin/curl -fsS "$URL" >/dev/null 2>&1
+  local http_status
+  http_status="$(/usr/bin/curl -sS -o /dev/null -w '%{http_code}' "$(launch_url)" 2>/dev/null || true)"
+  [[ "$http_status" == 2* || "$http_status" == 3* ]]
 }
 
 notify() {
@@ -16,11 +25,9 @@ notify() {
 }
 
 open_url() {
-  if /usr/bin/osascript -e 'id of application "Google Chrome"' >/dev/null 2>&1; then
-    /usr/bin/open -a "Google Chrome" "$URL"
-  else
-    /usr/bin/open "$URL"
-  fi
+  local target
+  target="$(launch_url)"
+  /usr/bin/open "$target"
 }
 
 if is_ready; then

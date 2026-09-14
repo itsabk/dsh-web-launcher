@@ -13,7 +13,7 @@ DeepSeek Harness is evolving quickly. Heavy desktop wrappers can lag behind upst
 This launcher keeps the update path close to the official command:
 
 ```bash
-npx --yes @deepseek-ai/dsh web
+npx --yes @deepseek-ai/dsh@latest web
 ```
 
 If you already have a global `dsh` command installed, the service uses:
@@ -26,12 +26,12 @@ dsh web
 
 - One-click macOS app to open DeepSeek Harness Web.
 - One-click Windows `.cmd` launcher to start DeepSeek Harness Web.
-- User-level macOS LaunchAgent for background service management.
+- User-level macOS LaunchAgent for background service management without opening a browser at login.
 - Windows background PowerShell runner with a stop script.
 - Starts the official `dsh web` command without modifying DeepSeek Harness.
-- Opens `http://127.0.0.1:3080` when the service is ready.
-- Works with macOS `nvm` Node.js environments.
-- Uses `dsh` when available, otherwise falls back to `npx --yes @deepseek-ai/dsh web`.
+- Opens the authenticated local URL emitted by current DSH releases when the service is ready.
+- Works with macOS `nvm`, Homebrew, and `~/.local/bin` Node.js environments.
+- Uses `dsh` when available, otherwise falls back to `npx --yes @deepseek-ai/dsh@latest web`.
 - Keeps logs in a predictable local folder.
 - Easy stop/uninstall scripts.
 
@@ -51,8 +51,8 @@ DeepSeek Harness launcher, DSH launcher, dsh web launcher, DeepSeek Harness desk
 
 Use the platform-specific release package:
 
-- macOS: `dsh-web-launcher-macos-v0.2.0.zip`
-- Windows: `dsh-web-launcher-windows-v0.2.0.zip`
+- macOS: `dsh-web-launcher-macos-v0.3.0.zip`
+- Windows: `dsh-web-launcher-windows-v0.3.0.zip`
 
 The source repository contains both platforms, but release downloads are split by operating system for convenience.
 
@@ -66,11 +66,14 @@ The source repository contains both platforms, but release downloads are split b
    ```
 
 3. Wait for the first startup. The first `npx` run can take several minutes.
-4. Double-click:
+4. Open the installed application:
 
    ```text
-   DeepSeek Harness.app
+   /Applications/DeepSeek Harness.app
    ```
+
+   On Macs where `/Applications` is not user-writable, the installer uses
+   `~/Applications/DeepSeek Harness.app` instead.
 
 ### Windows
 
@@ -91,11 +94,11 @@ http://127.0.0.1:3080
 
 ## Daily Use
 
-On macOS, double-click `DeepSeek Harness.app`.
+On macOS, open the installed `DeepSeek Harness.app` from Applications.
 
 On Windows, double-click `windows\Start DeepSeek Harness Web.cmd`.
 
-The launcher checks whether DeepSeek Harness Web is already reachable. If not, it starts the local service and waits for the Web UI before opening the browser.
+The launcher validates the current authenticated DSH URL. If the service is not ready, it starts the local service and waits before opening the URL in the default browser. Starting the service at login does not open a browser window.
 
 ## Logs
 
@@ -163,7 +166,7 @@ flowchart LR
   A["Launcher app or .cmd"] --> B["Check http://127.0.0.1:3080"]
   B -->|ready| C["Open browser"]
   B -->|not ready| D["Start local service"]
-  D --> E["dsh web or npx --yes @deepseek-ai/dsh web"]
+  D --> E["dsh web or npx --yes @deepseek-ai/dsh@latest web"]
   E --> F["DeepSeek Harness Web UI"]
   F --> C
 ```
@@ -189,14 +192,14 @@ Windows:
 Look for a line like:
 
 ```text
-dsh web: http://127.0.0.1:3080
+dsh web: http://127.0.0.1:3080/?token=...
 ```
 
 ### First launch looks slow
 
-The first `npx --yes @deepseek-ai/dsh web` run may download and prepare the official package. This can take several minutes depending on network and npm cache state.
+The first `npx --yes @deepseek-ai/dsh@latest web` run may download and prepare the official package. This can take several minutes depending on network and npm cache state.
 
-### Node.js is installed with nvm but the macOS service cannot find npx
+### The macOS service cannot find dsh or npx
 
 The service script loads:
 
@@ -210,6 +213,14 @@ It also scans:
 ~/.nvm/versions/node/*/bin
 ```
 
+The service PATH also includes:
+
+```text
+~/.local/bin
+/opt/homebrew/bin
+/usr/local/bin
+```
+
 If it still fails, open the log file and confirm whether `npx` appears in `PATH`.
 
 ## 中文说明
@@ -219,7 +230,7 @@ If it still fails, open the log file and confirm whether `npx` appears in `PATH`
 它不会打包 DeepSeek Harness，也不会修改官方源码；只是用本机后台脚本运行官方命令：
 
 ```bash
-npx --yes @deepseek-ai/dsh web
+npx --yes @deepseek-ai/dsh@latest web
 ```
 
 如果本机已有全局 `dsh` 命令，则优先运行：
